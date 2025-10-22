@@ -1,0 +1,1886 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Red Empresarial Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.3/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            overflow: hidden;
+            color: #fff;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Header flotante */
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 15px 40px;
+            border-radius: 50px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(99, 179, 237, 0.3);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 30px;
+            padding-left: 30px;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #60a5fa;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 100px 25px 25px 25px;
+            overflow-y: auto;
+            box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+            border-right: 1px solid rgba(99, 179, 237, 0.2);
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(96, 165, 250, 0.5);
+            border-radius: 4px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #60a5fa;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            border-radius: 2px;
+        }
+
+        .device-palette {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        .device-btn {
+            padding: 20px 12px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(51, 65, 85, 0.8));
+            border: 1px solid rgba(99, 179, 237, 0.3);
+            border-radius: 12px;
+            cursor: grab;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            font-size: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .device-btn:active {
+            cursor: grabbing;
+        }
+
+        .device-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .device-btn:hover::before {
+            left: 100%;
+        }
+
+        .device-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(96, 165, 250, 0.4);
+            border-color: #60a5fa;
+        }
+
+        .device-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .control-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .control-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.5);
+        }
+
+        .control-btn.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .control-btn.success:hover {
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.5);
+        }
+
+        .control-btn.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .control-btn.danger:hover {
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.5);
+        }
+
+        .control-btn.warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .control-btn.warning:hover {
+            box-shadow: 0 10px 30px rgba(245, 158, 11, 0.5);
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at 50% 50%, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #canvas {
+            max-width: 100%;
+            max-height: 100%;
+            cursor: crosshair;
+            border-radius: 20px;
+        }
+
+        .info-panel {
+            width: 350px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 100px 25px 25px 25px;
+            overflow-y: auto;
+            box-shadow: -4px 0 30px rgba(0, 0, 0, 0.5);
+            border-left: 1px solid rgba(99, 179, 237, 0.2);
+        }
+
+        .info-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .info-panel::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        .info-panel::-webkit-scrollbar-thumb {
+            background: rgba(96, 165, 250, 0.5);
+            border-radius: 4px;
+        }
+
+        .config-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(51, 65, 85, 0.6));
+            border: 1px solid rgba(99, 179, 237, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .config-item {
+            margin-bottom: 18px;
+        }
+
+        .config-item label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #94a3b8;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .config-item input, .config-item select {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(99, 179, 237, 0.3);
+            background: rgba(15, 23, 42, 0.8);
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .config-item input:focus, .config-item select:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+
+        .simulation-log {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+            border: 1px solid rgba(99, 179, 237, 0.2);
+            padding: 20px;
+            border-radius: 16px;
+            max-height: 450px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+
+        .simulation-log::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .simulation-log::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        .simulation-log::-webkit-scrollbar-thumb {
+            background: rgba(96, 165, 250, 0.5);
+            border-radius: 4px;
+        }
+
+        .log-entry {
+            padding: 8px 12px;
+            margin: 6px 0;
+            border-left: 3px solid transparent;
+            border-radius: 6px;
+            background: rgba(30, 41, 59, 0.5);
+            color: #cbd5e1;
+            transition: all 0.3s;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .log-success {
+            color: #4ade80;
+            border-left-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .log-error {
+            color: #f87171;
+            border-left-color: #f87171;
+            background: rgba(248, 113, 113, 0.1);
+        }
+
+        .log-warning {
+            color: #fbbf24;
+            border-left-color: #fbbf24;
+            background: rgba(251, 191, 36, 0.1);
+        }
+
+        .log-info {
+            color: #60a5fa;
+            border-left-color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
+        }
+
+        .mode-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 1000;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .packet-animation {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle, #4ade80, #22c55e);
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 20px #4ade80;
+            z-index: 999;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        .topology-preview {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(51, 65, 85, 0.6));
+            border: 1px solid rgba(99, 179, 237, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .preview-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #60a5fa;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .device-list-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(99, 179, 237, 0.1);
+            transition: all 0.3s;
+        }
+
+        .device-list-item:hover {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(96, 165, 250, 0.3);
+            transform: translateX(5px);
+        }
+
+        .device-list-icon {
+            font-size: 24px;
+        }
+
+        .device-list-info {
+            flex: 1;
+        }
+
+        .device-list-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .device-list-ip {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .status-badge {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 10px #4ade80;
+        }
+
+        .status-badge.offline {
+            background: #f87171;
+            box-shadow: 0 0 10px #f87171;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .quick-action-btn {
+            padding: 12px;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(99, 179, 237, 0.2);
+            border-radius: 10px;
+            color: #94a3b8;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #60a5fa;
+            color: #60a5fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌐 Simulador de Red Pro</h1>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="headerDeviceCount">0</div>
+                    <div class="stat-label">Dispositivos</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="headerConnectionCount">0</div>
+                    <div class="stat-label">Conexiones</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="headerLatency">0ms</div>
+                    <div class="stat-label">Latencia</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="section-title">📦 Dispositivos</div>
+            <div class="device-palette">
+                <div class="device-btn" data-device="router">
+                    <div class="device-icon">🔀</div>
+                    Router
+                </div>
+                <div class="device-btn" data-device="switch">
+                    <div class="device-icon">⚡</div>
+                    Switch
+                </div>
+                <div class="device-btn" data-device="pc">
+                    <div class="device-icon">🖥️</div>
+                    PC
+                </div>
+                <div class="device-btn" data-device="server">
+                    <div class="device-icon">🗄️</div>
+                    Server
+                </div>
+                <div class="device-btn" data-device="firewall">
+                    <div class="device-icon">🛡️</div>
+                    Firewall
+                </div>
+                <div class="device-btn" data-device="access-point">
+                    <div class="device-icon">📡</div>
+                    Access Point
+                </div>
+                <div class="device-btn" data-device="laptop">
+                    <div class="device-icon">💻</div>
+                    Laptop
+                </div>
+                <div class="device-btn" data-device="cloud">
+                    <div class="device-icon">☁️</div>
+                    Internet
+                </div>
+                <div class="device-btn" data-device="printer">
+                    <div class="device-icon">🖨️</div>
+                    Impresora
+                </div>
+                <div class="device-btn" data-device="phone">
+                    <div class="device-icon">📱</div>
+                    Teléfono
+                </div>
+            </div>
+
+            <div class="section-title">🎮 Controles</div>
+            <div class="controls">
+                <button class="control-btn" id="connectMode">
+                    <span>🔗</span> Modo Conexión
+                </button>
+                <button class="control-btn success" id="simulateBtn">
+                    <span>▶️</span> Iniciar Simulación
+                </button>
+                <button class="control-btn warning" id="autoConfig">
+                    <span>⚙️</span> Auto-Configurar
+                </button>
+                <button class="control-btn" id="pingTest">
+                    <span>📡</span> Test de Ping
+                </button>
+                <button class="control-btn" id="generatePdf">
+                    <span>📄</span> Generar Informe PDF
+                </button>
+                <button class="control-btn" id="exportTopology">
+                    <span>📤</span> Exportar Topología
+                </button>
+                <button class="control-btn" id="importTopology">
+                    <span>📥</span> Importar Topología
+                </button>
+                <button class="control-btn danger" id="clearBtn">
+                    <span>🗑️</span> Limpiar Red
+                </button>
+            </div>
+
+            <input type="file" id="importFile" style="display: none;" accept=".json">
+
+            <div class="topology-preview">
+                <div class="preview-title">🔍 Vista de Dispositivos</div>
+                <div id="deviceListContainer"></div>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <div class="mode-indicator" id="modeIndicator">🎨 Modo Diseño</div>
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+            <div class="section-title">⚙️ Configuración</div>
+            <div class="config-card">
+                <div id="configPanel">
+                    <p style="color: #94a3b8; font-size: 13px; text-align: center; padding: 20px;">
+                        Selecciona un dispositivo para ver su configuración
+                    </p>
+                </div>
+            </div>
+
+            <div class="section-title">📋 Log de Simulación</div>
+            <div class="simulation-log">
+                <div id="logContainer">
+                    <div class="log-entry log-info">⚡ Sistema inicializado correctamente</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class NetworkSimulator {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.devices = [];
+                this.connections = [];
+                this.selectedDevice = null;
+                this.connectMode = false;
+                this.connectStart = null;
+                this.isSimulating = false;
+                this.draggingDevice = null;
+                this.offsetX = 0;
+                this.offsetY = 0;
+                this.averageLatency = 0;
+                this.logs = [];
+                
+                this.resizeCanvas();
+                this.initializeEventListeners();
+                this.render();
+                
+                window.addEventListener('resize', () => this.resizeCanvas());
+            }
+
+            resizeCanvas() {
+                const container = this.canvas.parentElement;
+                this.canvas.width = container.offsetWidth - 100;
+                this.canvas.height = container.offsetHeight - 100;
+                this.render();
+            }
+
+            initializeEventListeners() {
+                document.querySelectorAll('.device-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const deviceType = e.currentTarget.dataset.device;
+                        this.addDevice(deviceType);
+                    });
+                    btn.draggable = true;
+                    btn.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', btn.dataset.device);
+                    });
+                });
+
+                this.canvas.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+
+                this.canvas.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const type = e.dataTransfer.getData('text/plain');
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    this.addDevice(type, x, y);
+                });
+
+                this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+
+                document.getElementById('connectMode').addEventListener('click', () => this.toggleConnectMode());
+                document.getElementById('simulateBtn').addEventListener('click', () => this.simulateNetwork());
+                document.getElementById('autoConfig').addEventListener('click', () => this.autoConfigureNetwork());
+                document.getElementById('clearBtn').addEventListener('click', () => this.clearAll());
+                document.getElementById('pingTest').addEventListener('click', () => this.performPingTest());
+                document.getElementById('generatePdf').addEventListener('click', () => this.generatePdfReport());
+                document.getElementById('exportTopology').addEventListener('click', () => this.exportTopology());
+                document.getElementById('importTopology').addEventListener('click', () => document.getElementById('importFile').click());
+
+                document.getElementById('importFile').addEventListener('change', (e) => this.importTopology(e));
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Delete' && this.selectedDevice) {
+                        this.deleteSelectedDevice();
+                    }
+                    if (e.key === 'Escape') {
+                        this.connectMode = false;
+                        this.connectStart = null;
+                        this.updateModeIndicator();
+                    }
+                });
+            }
+
+            addDevice(type, x = null, y = null) {
+                const device = {
+                    id: Date.now() + Math.random(),
+                    type: type,
+                    x: x || this.canvas.width / 2,
+                    y: y || this.canvas.height / 2,
+                    name: `${type.toUpperCase()}-${this.devices.length + 1}`,
+                    ip: this.generateIP(),
+                    subnet: '255.255.255.0',
+                    gateway: '',
+                    status: 'online',
+                    config: {}
+                };
+
+                this.devices.push(device);
+                this.updateStats();
+                this.updateDeviceList();
+                this.render();
+                this.log(`✅ Dispositivo ${device.name} agregado exitosamente`, 'success');
+            }
+
+            generateIP() {
+                return `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 254) + 1}`;
+            }
+
+            handleMouseDown(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const device = this.getDeviceAt(x, y);
+
+                if (this.connectMode) {
+                    if (device) {
+                        if (!this.connectStart) {
+                            this.connectStart = device;
+                            this.log(`🔗 Dispositivo ${device.name} seleccionado para conexión`, 'info');
+                        } else {
+                            this.createConnection(this.connectStart, device);
+                            this.connectStart = null;
+                        }
+                    }
+                } else {
+                    if (device) {
+                        this.draggingDevice = device;
+                        this.offsetX = x - device.x;
+                        this.offsetY = y - device.y;
+                        this.selectedDevice = device;
+                        this.showDeviceConfig();
+                    }
+                }
+
+                this.render();
+            }
+
+            handleMouseMove(e) {
+                if (this.draggingDevice) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.draggingDevice.x = e.clientX - rect.left - this.offsetX;
+                    this.draggingDevice.y = e.clientY - rect.top - this.offsetY;
+                    this.render();
+                }
+            }
+
+            handleMouseUp(e) {
+                this.draggingDevice = null;
+            }
+
+            getDeviceAt(x, y) {
+                return this.devices.find(d => {
+                    const distance = Math.sqrt((x - d.x) ** 2 + (y - d.y) ** 2);
+                    return distance < 35;
+                });
+            }
+
+            createConnection(device1, device2) {
+                const exists = this.connections.some(c => 
+                    (c.from === device1 && c.to === device2) || 
+                    (c.from === device2 && c.to === device1)
+                );
+
+                if (!exists && device1 !== device2) {
+                    this.connections.push({
+                        id: Date.now(),
+                        from: device1,
+                        to: device2,
+                        status: 'active',
+                        bandwidth: '1 Gbps',
+                        latency: Math.floor(Math.random() * 50) + 1
+                    });
+                    this.updateStats();
+                    this.render();
+                    this.log(`🔗 Conexión establecida: ${device1.name} ↔ ${device2.name}`, 'success');
+                } else if (device1 === device2) {
+                    this.log(`⚠️ No se puede conectar un dispositivo consigo mismo`, 'warning');
+                } else {
+                    this.log(`⚠️ La conexión ya existe entre ${device1.name} y ${device2.name}`, 'warning');
+                }
+            }
+
+            toggleConnectMode() {
+                this.connectMode = !this.connectMode;
+                this.connectStart = null;
+                this.updateModeIndicator();
+            }
+
+            updateModeIndicator() {
+                const btn = document.getElementById('connectMode');
+                const indicator = document.getElementById('modeIndicator');
+                
+                if (this.connectMode) {
+                    btn.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+                    indicator.textContent = '🔗 Modo Conexión Activo';
+                } else {
+                    btn.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+                    indicator.textContent = '🎨 Modo Diseño';
+                }
+            }
+
+            autoConfigureNetwork() {
+                this.log('⚙️ Iniciando auto-configuración de red...', 'info');
+                
+                const routers = this.devices.filter(d => d.type === 'router');
+                if (routers.length === 0) {
+                    this.log('❌ Error: No hay routers en la topología', 'error');
+                    return;
+                }
+
+                let subnet = 1;
+                routers.forEach(router => {
+                    router.ip = `192.168.${subnet}.1`;
+                    router.gateway = router.ip;
+                    this.log(`✅ Router ${router.name} configurado: ${router.ip}`, 'success');
+                    
+                    const connected = this.getConnectedDevices(router);
+                    let hostNum = 10;
+                    
+                    connected.forEach(device => {
+                        if (device.type !== 'router') {
+                            device.ip = `192.168.${subnet}.${hostNum++}`;
+                            device.gateway = router.ip;
+                            device.subnet = '255.255.255.0';
+                            this.log(`✅ ${device.name} configurado: ${device.ip}`, 'success');
+                        }
+                    });
+                    
+                    subnet++;
+                });
+
+                this.log('🎉 Auto-configuración completada exitosamente', 'success');
+                this.updateDeviceList();
+                this.render();
+                if (this.selectedDevice) {
+                    this.showDeviceConfig();
+                }
+            }
+
+            getConnectedDevices(device) {
+                const connected = [];
+                const visited = new Set();
+                
+                const traverse = (d) => {
+                    if (visited.has(d.id)) return;
+                    visited.add(d.id);
+                    connected.push(d);
+                    
+                    this.connections.forEach(conn => {
+                        if (conn.from === d && !visited.has(conn.to.id)) {
+                            traverse(conn.to);
+                        } else if (conn.to === d && !visited.has(conn.from.id)) {
+                            traverse(conn.from);
+                        }
+                    });
+                };
+                
+                traverse(device);
+                return connected;
+            }
+
+            performPingTest() {
+                if (this.devices.length < 2) {
+                    this.log('❌ Se necesitan al menos 2 dispositivos para realizar ping', 'error');
+                    return;
+                }
+
+                this.log('📡 Iniciando test de conectividad (PING)...', 'info');
+                
+                const testPairs = Math.min(5, Math.floor(this.devices.length / 2));
+                
+                for (let i = 0; i < testPairs; i++) {
+                    setTimeout(() => {
+                        const from = this.devices[Math.floor(Math.random() * this.devices.length)];
+                        const to = this.devices[Math.floor(Math.random() * this.devices.length)];
+                        
+                        if (from !== to) {
+                            const connected = this.getConnectedDevices(from);
+                            const isReachable = connected.includes(to);
+                            const latency = Math.floor(Math.random() * 50) + 1;
+                            
+                            if (isReachable) {
+                                this.log(`✅ PING ${from.name} → ${to.name}: ${latency}ms (TTL=64)`, 'success');
+                                this.animatePacket(from, to);
+                            } else {
+                                this.log(`❌ PING ${from.name} → ${to.name}: Destino inalcanzable`, 'error');
+                            }
+                        }
+                    }, i * 800);
+                }
+
+                setTimeout(() => {
+                    this.log('📊 Test de conectividad completado', 'info');
+                }, testPairs * 800 + 500);
+            }
+
+            simulateNetwork() {
+                if (this.devices.length === 0) {
+                    this.log('❌ No hay dispositivos en la red para simular', 'error');
+                    return;
+                }
+
+                this.isSimulating = true;
+                this.log('═══════════════════════════════════════', 'info');
+                this.log('🚀 INICIANDO SIMULACIÓN DE RED', 'info');
+                this.log('═══════════════════════════════════════', 'info');
+                
+                // Fase 1: Verificación de dispositivos
+                setTimeout(() => {
+                    this.log('📊 Fase 1: Verificación de dispositivos...', 'info');
+                    this.devices.forEach(device => {
+                        const status = device.status === 'online' ? '🟢' : '🔴';
+                        this.log(`${status} ${device.name} (${device.ip}) - Estado: ${device.status.toUpperCase()}`, device.status === 'online' ? 'success' : 'error');
+                    });
+                }, 500);
+
+                // Fase 2: Análisis de conectividad
+                setTimeout(() => {
+                    this.log('═══════════════════════════════════════', 'info');
+                    this.log('🔗 Fase 2: Análisis de conectividad...', 'info');
+                    this.devices.forEach(device => {
+                        const connected = this.getConnectedDevices(device);
+                        this.log(`📡 ${device.name}: ${connected.length - 1} dispositivos alcanzables`, 'success');
+                    });
+                }, 1500);
+
+                // Fase 3: Test de enrutamiento
+                setTimeout(() => {
+                    this.log('═══════════════════════════════════════', 'info');
+                    this.log('🛣️ Fase 3: Test de enrutamiento...', 'info');
+                    const routers = this.devices.filter(d => d.type === 'router');
+                    if (routers.length > 0) {
+                        routers.forEach(router => {
+                            const routes = this.getConnectedDevices(router);
+                            this.log(`🔀 ${router.name}: ${routes.length} rutas activas`, 'success');
+                        });
+                    } else {
+                        this.log('⚠️ No hay routers en la topología', 'warning');
+                    }
+                }, 2500);
+
+                // Fase 4: Simulación de tráfico
+                setTimeout(() => {
+                    this.log('═══════════════════════════════════════', 'info');
+                    this.log('📦 Fase 4: Simulación de tráfico de datos...', 'info');
+                    this.simulateDataFlow();
+                }, 3500);
+
+                // Fase 5: Verificación de configuración
+                setTimeout(() => {
+                    this.log('═══════════════════════════════════════', 'info');
+                    this.log('⚙️ Fase 5: Verificación de configuración...', 'info');
+                    const misconfigured = this.devices.filter(d => !d.gateway || !d.ip);
+                    if (misconfigured.length > 0) {
+                        this.log(`⚠️ ${misconfigured.length} dispositivo(s) sin configurar completamente`, 'warning');
+                        misconfigured.forEach(d => {
+                            this.log(`⚠️ ${d.name}: Configuración incompleta`, 'warning');
+                        });
+                    } else {
+                        this.log('✅ Todos los dispositivos configurados correctamente', 'success');
+                    }
+                }, 5000);
+
+                // Fase 6: Análisis de seguridad
+                setTimeout(() => {
+                    this.log('═══════════════════════════════════════', 'info');
+                    this.log('🛡️ Fase 6: Análisis de seguridad...', 'info');
+                    const firewalls = this.devices.filter(d => d.type === 'firewall');
+                    if (firewalls.length > 0) {
+                        firewalls.forEach(fw => {
+                            this.log(`🛡️ ${fw.name}: Protección activa`, 'success');
+                        });
+                    } else {
+                        this.log('⚠️ No se detectaron firewalls en la red', 'warning');
+                    }
+                }, 6000);
+
+                // Resumen final
+                setTimeout(() => {
+                    this.log('═══════════════════════════════════════', 'info');
+                    this.log('📊 RESUMEN DE SIMULACIÓN', 'success');
+                    this.log('═══════════════════════════════════════', 'info');
+                    this.log(`✅ Dispositivos totales: ${this.devices.length}`, 'success');
+                    this.log(`✅ Conexiones activas: ${this.connections.length}`, 'success');
+                    this.log(`✅ Latencia promedio: ${this.averageLatency}ms`, 'success');
+                    const onlineDevices = this.devices.filter(d => d.status === 'online').length;
+                    this.log(`✅ Dispositivos online: ${onlineDevices}/${this.devices.length}`, 'success');
+                    this.log('═══════════════════════════════════════', 'info');
+                    this.log('🎉 SIMULACIÓN COMPLETADA EXITOSAMENTE', 'success');
+                    this.log('═══════════════════════════════════════', 'info');
+                    
+                    this.isSimulating = false;
+                }, 7000);
+            }
+
+            simulateDataFlow() {
+                if (this.connections.length === 0) return;
+
+                const packetCount = Math.min(10, this.connections.length * 2);
+                
+                for (let i = 0; i < packetCount; i++) {
+                    setTimeout(() => {
+                        const conn = this.connections[Math.floor(Math.random() * this.connections.length)];
+                        const direction = Math.random() > 0.5;
+                        const from = direction ? conn.from : conn.to;
+                        const to = direction ? conn.to : conn.from;
+                        
+                        const packetSize = Math.floor(Math.random() * 1500) + 64;
+                        const latency = conn.latency || Math.floor(Math.random() * 50) + 1;
+                        
+                        this.log(`📦 Paquete enviado: ${from.name} → ${to.name} (${packetSize} bytes, ${latency}ms)`, 'success');
+                        this.animatePacket(from, to);
+                    }, i * 400);
+                }
+            }
+
+            animatePacket(from, to) {
+                const packet = document.createElement('div');
+                packet.className = 'packet-animation';
+                document.body.appendChild(packet);
+
+                const rect = this.canvas.getBoundingClientRect();
+                const startX = rect.left + from.x;
+                const startY = rect.top + from.y;
+                const endX = rect.left + to.x;
+                const endY = rect.top + to.y;
+
+                packet.style.left = startX + 'px';
+                packet.style.top = startY + 'px';
+
+                let progress = 0;
+                const animate = () => {
+                    progress += 0.015;
+                    if (progress <= 1) {
+                        const x = startX + (endX - startX) * progress;
+                        const y = startY + (endY - startY) * progress;
+                        packet.style.left = x + 'px';
+                        packet.style.top = y + 'px';
+                        requestAnimationFrame(animate);
+                    } else {
+                        packet.remove();
+                    }
+                };
+                animate();
+            }
+
+            showDeviceConfig() {
+                if (!this.selectedDevice) return;
+
+                const panel = document.getElementById('configPanel');
+                const d = this.selectedDevice;
+
+                panel.innerHTML = `
+                    <div class="config-item">
+                        <label>Nombre del Dispositivo</label>
+                        <input type="text" id="deviceName" value="${d.name}">
+                    </div>
+                    <div class="config-item">
+                        <label>Dirección IP</label>
+                        <input type="text" id="deviceIP" value="${d.ip}">
+                    </div>
+                    <div class="config-item">
+                        <label>Máscara de Subred</label>
+                        <input type="text" id="deviceSubnet" value="${d.subnet}">
+                    </div>
+                    <div class="config-item">
+                        <label>Gateway Predeterminado</label>
+                        <input type="text" id="deviceGateway" value="${d.gateway || ''}">
+                    </div>
+                    <div class="config-item">
+                        <label>Estado del Dispositivo</label>
+                        <select id="deviceStatus">
+                            <option value="online" ${d.status === 'online' ? 'selected' : ''}>🟢 Online</option>
+                            <option value="offline" ${d.status === 'offline' ? 'selected' : ''}>🔴 Offline</option>
+                        </select>
+                    </div>
+                    <button class="control-btn success" onclick="simulator.applyConfig()" style="margin-top: 20px;">
+                        <span>💾</span> Guardar Cambios
+                    </button>
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" onclick="simulator.duplicateSelectedDevice()">📋 Duplicar</button>
+                        <button class="quick-action-btn" onclick="simulator.deleteSelectedDevice()">🗑️ Eliminar</button>
+                    </div>
+                `;
+            }
+
+            applyConfig() {
+                if (!this.selectedDevice) return;
+
+                this.selectedDevice.name = document.getElementById('deviceName').value;
+                this.selectedDevice.ip = document.getElementById('deviceIP').value;
+                this.selectedDevice.subnet = document.getElementById('deviceSubnet').value;
+                this.selectedDevice.gateway = document.getElementById('deviceGateway').value;
+                this.selectedDevice.status = document.getElementById('deviceStatus').value;
+
+                this.log(`💾 Configuración guardada para ${this.selectedDevice.name}`, 'success');
+                this.updateDeviceList();
+                this.render();
+            }
+
+            deleteSelectedDevice() {
+                if (!this.selectedDevice) return;
+
+                const deviceName = this.selectedDevice.name;
+                this.devices = this.devices.filter(d => d !== this.selectedDevice);
+                this.connections = this.connections.filter(c => 
+                    c.from !== this.selectedDevice && c.to !== this.selectedDevice
+                );
+                
+                this.selectedDevice = null;
+                document.getElementById('configPanel').innerHTML = 
+                    '<p style="color: #94a3b8; font-size: 13px; text-align: center; padding: 20px;">Selecciona un dispositivo para ver su configuración</p>';
+                
+                this.updateStats();
+                this.updateDeviceList();
+                this.render();
+                this.log(`🗑️ Dispositivo ${deviceName} eliminado de la topología`, 'warning');
+            }
+
+            duplicateSelectedDevice() {
+                if (!this.selectedDevice) return;
+
+                const newDevice = {
+                    ...this.selectedDevice,
+                    id: Date.now() + Math.random(),
+                    x: this.selectedDevice.x + 60,
+                    y: this.selectedDevice.y + 60,
+                    name: `${this.selectedDevice.type.toUpperCase()}-${this.devices.length + 1}`,
+                    ip: this.generateIP()
+                };
+
+                this.devices.push(newDevice);
+                this.updateStats();
+                this.updateDeviceList();
+                this.render();
+                this.log(`📋 Dispositivo duplicado: ${newDevice.name}`, 'success');
+            }
+
+            clearAll() {
+                if (confirm('⚠️ ¿Estás seguro de que deseas eliminar toda la topología de red?')) {
+                    this.devices = [];
+                    this.connections = [];
+                    this.selectedDevice = null;
+                    this.connectStart = null;
+                    this.logs = [];
+                    document.getElementById('configPanel').innerHTML = 
+                        '<p style="color: #94a3b8; font-size: 13px; text-align: center; padding: 20px;">Selecciona un dispositivo para ver su configuración</p>';
+                    document.getElementById('logContainer').innerHTML = '';
+                    this.updateStats();
+                    this.updateDeviceList();
+                    this.render();
+                    this.log('🗑️ Topología de red eliminada completamente', 'warning');
+                }
+            }
+
+            updateStats() {
+                document.getElementById('headerDeviceCount').textContent = this.devices.length;
+                document.getElementById('headerConnectionCount').textContent = this.connections.length;
+                
+                if (this.connections.length > 0) {
+                    const totalLatency = this.connections.reduce((sum, c) => sum + (c.latency || 0), 0);
+                    this.averageLatency = Math.floor(totalLatency / this.connections.length);
+                    document.getElementById('headerLatency').textContent = this.averageLatency + 'ms';
+                } else {
+                    this.averageLatency = 0;
+                    document.getElementById('headerLatency').textContent = '0ms';
+                }
+            }
+
+            updateDeviceList() {
+                const container = document.getElementById('deviceListContainer');
+                if (this.devices.length === 0) {
+                    container.innerHTML = '<p style="color: #94a3b8; font-size: 12px; text-align: center;">No hay dispositivos en la red</p>';
+                    return;
+                }
+
+                const icons = {
+                    'router': '🔀', 'switch': '⚡', 'pc': '🖥️', 'server': '🗄️',
+                    'firewall': '🛡️', 'access-point': '📡', 'laptop': '💻', 'cloud': '☁️',
+                    'printer': '🖨️', 'phone': '📱'
+                };
+
+                container.innerHTML = this.devices.map(d => `
+                    <div class="device-list-item" onclick="simulator.selectDeviceFromList('${d.id}')">
+                        <div class="device-list-icon">${icons[d.type]}</div>
+                        <div class="device-list-info">
+                            <div class="device-list-name">${d.name}</div>
+                            <div class="device-list-ip">${d.ip}</div>
+                        </div>
+                        <div class="status-badge ${d.status === 'offline' ? 'offline' : ''}"></div>
+                    </div>
+                `).join('');
+            }
+
+            selectDeviceFromList(deviceId) {
+                this.selectedDevice = this.devices.find(d => d.id == deviceId);
+                if (this.selectedDevice) {
+                    this.showDeviceConfig();
+                    this.render();
+                }
+            }
+
+            log(message, type = 'info') {
+                const container = document.getElementById('logContainer');
+                const entry = document.createElement('div');
+                entry.className = `log-entry log-${type}`;
+                const time = new Date().toLocaleTimeString('es-ES');
+                entry.textContent = `[${time}] ${message}`;
+                container.appendChild(entry);
+                container.scrollTop = container.scrollHeight;
+
+                this.logs.push({time, message, type});
+
+                // Limitar el log a 50 entradas
+                while (container.children.length > 50) {
+                    container.removeChild(container.firstChild);
+                    this.logs.shift();
+                }
+            }
+
+            generatePdfReport() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                doc.setFontSize(18);
+                doc.text('Informe de Simulación de Red', 10, 10);
+
+                doc.setFontSize(12);
+                doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 10, 20);
+                doc.text(`Hora: ${new Date().toLocaleTimeString('es-ES')}`, 10, 30);
+                doc.text(`Dispositivos totales: ${this.devices.length}`, 10, 40);
+                doc.text(`Conexiones: ${this.connections.length}`, 10, 50);
+                doc.text(`Latencia promedio: ${this.averageLatency}ms`, 10, 60);
+
+                // Tabla de Dispositivos
+                doc.autoTable({
+                    startY: 70,
+                    head: [['Nombre', 'Tipo', 'IP', 'Subnet', 'Gateway', 'Estado']],
+                    body: this.devices.map(d => [d.name, d.type, d.ip, d.subnet, d.gateway || '-', d.status]),
+                    theme: 'grid',
+                    headStyles: { fillColor: [96, 165, 250] },
+                });
+
+                // Tabla de Conexiones
+                doc.autoTable({
+                    startY: doc.lastAutoTable.finalY + 10,
+                    head: [['Desde', 'Hasta', 'Latencia (ms)', 'Bandwidth', 'Estado']],
+                    body: this.connections.map(c => [c.from.name, c.to.name, c.latency, c.bandwidth, c.status]),
+                    theme: 'grid',
+                    headStyles: { fillColor: [96, 165, 250] },
+                });
+
+                // Tabla de Logs
+                doc.autoTable({
+                    startY: doc.lastAutoTable.finalY + 10,
+                    head: [['Tiempo', 'Mensaje', 'Tipo']],
+                    body: this.logs.map(l => [l.time, l.message, l.type]),
+                    theme: 'grid',
+                    headStyles: { fillColor: [96, 165, 250] },
+                });
+
+                doc.save('informe_simulacion_red.pdf');
+                this.log('📄 Informe PDF generado exitosamente', 'success');
+            }
+
+            exportTopology() {
+                const data = {
+                    devices: this.devices.map(d => ({
+                        id: d.id,
+                        type: d.type,
+                        x: d.x,
+                        y: d.y,
+                        name: d.name,
+                        ip: d.ip,
+                        subnet: d.subnet,
+                        gateway: d.gateway,
+                        status: d.status
+                    })),
+                    connections: this.connections.map(c => ({
+                        id: c.id,
+                        fromId: c.from.id,
+                        toId: c.to.id,
+                        status: c.status,
+                        bandwidth: c.bandwidth,
+                        latency: c.latency
+                    }))
+                };
+
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'topologia_red.json';
+                a.click();
+                URL.revokeObjectURL(url);
+
+                this.log('📤 Topología exportada exitosamente', 'success');
+            }
+
+            importTopology(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        this.devices = data.devices.map(d => ({ ...d }));
+                        this.connections = data.connections.map(c => ({
+                            id: c.id,
+                            status: c.status,
+                            bandwidth: c.bandwidth,
+                            latency: c.latency,
+                            from: this.devices.find(d => d.id === c.fromId),
+                            to: this.devices.find(d => d.id === c.toId)
+                        })).filter(c => c.from && c.to); // Filtrar conexiones inválidas
+
+                        this.updateStats();
+                        this.updateDeviceList();
+                        this.render();
+                        this.log('📥 Topología importada exitosamente', 'success');
+                    } catch (error) {
+                        this.log(`❌ Error al importar topología: ${error.message}`, 'error');
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            render() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                this.drawGrid();
+                this.drawConnections();
+                this.drawDevices();
+            }
+
+            drawGrid() {
+                this.ctx.strokeStyle = 'rgba(99, 179, 237, 0.05)';
+                this.ctx.lineWidth = 1;
+                
+                for (let x = 0; x < this.canvas.width; x += 40) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, 0);
+                    this.ctx.lineTo(x, this.canvas.height);
+                    this.ctx.stroke();
+                }
+                
+                for (let y = 0; y < this.canvas.height; y += 40) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, y);
+                    this.ctx.lineTo(this.canvas.width, y);
+                    this.ctx.stroke();
+                }
+            }
+
+            drawConnections() {
+                this.connections.forEach(conn => {
+                    const gradient = this.ctx.createLinearGradient(
+                        conn.from.x, conn.from.y, conn.to.x, conn.to.y
+                    );
+                    gradient.addColorStop(0, 'rgba(96, 165, 250, 0.6)');
+                    gradient.addColorStop(1, 'rgba(167, 139, 250, 0.6)');
+
+                    this.ctx.strokeStyle = gradient;
+                    this.ctx.lineWidth = 3;
+                    this.ctx.shadowColor = 'rgba(96, 165, 250, 0.5)';
+                    this.ctx.shadowBlur = 10;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(conn.from.x, conn.from.y);
+                    this.ctx.lineTo(conn.to.x, conn.to.y);
+                    this.ctx.stroke();
+
+                    this.ctx.shadowColor = 'transparent';
+                    this.ctx.shadowBlur = 0;
+                });
+            }
+
+            drawDevices() {
+                this.devices.forEach(device => {
+                    this.drawDevice(device);
+                });
+            }
+
+            drawDevice(device) {
+                const isSelected = this.selectedDevice === device;
+                const isConnectStart = this.connectStart === device;
+
+                this.ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+                this.ctx.shadowBlur = 15;
+                this.ctx.shadowOffsetX = 0;
+                this.ctx.shadowOffsetY = 5;
+
+                this.ctx.beginPath();
+                this.ctx.arc(device.x, device.y, 40, 0, Math.PI * 2);
+                
+                const colors = {
+                    'router': ['#3b82f6', '#2563eb'],
+                    'switch': ['#10b981', '#059669'],
+                    'pc': ['#f59e0b', '#d97706'],
+                    'server': ['#8b5cf6', '#7c3aed'],
+                    'firewall': ['#ef4444', '#dc2626'],
+                    'access-point': ['#14b8a6', '#0d9488'],
+                    'laptop': ['#ec4899', '#db2777'],
+                    'cloud': ['#6366f1', '#4f46e5'],
+                    'printer': ['#6b7280', '#4b5563'],
+                    'phone': ['#0ea5e9', '#0369a1']
+                };
+                
+                const [color1, color2] = colors[device.type] || ['#64748b', '#475569'];
+                const gradient = this.ctx.createRadialGradient(
+                    device.x - 10, device.y - 10, 5,
+                    device.x, device.y, 40
+                );
+                gradient.addColorStop(0, color1);
+                gradient.addColorStop(1, color2);
+                
+                this.ctx.fillStyle = gradient;
+                this.ctx.fill();
+
+                if (isSelected || isConnectStart) {
+                    this.ctx.strokeStyle = isConnectStart ? '#f59e0b' : '#fbbf24';
+                    this.ctx.lineWidth = 5;
+                    this.ctx.shadowBlur = 20;
+                    this.ctx.shadowColor = isConnectStart ? '#f59e0b' : '#fbbf24';
+                } else {
+                    this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    this.ctx.lineWidth = 3;
+                }
+                this.ctx.stroke();
+
+                this.ctx.shadowColor = 'transparent';
+                this.ctx.shadowBlur = 0;
+
+                const icons = {
+                    'router': '🔀', 'switch': '⚡', 'pc': '🖥️', 'server': '🗄️',
+                    'firewall': '🛡️', 'access-point': '📡', 'laptop': '💻', 'cloud': '☁️',
+                    'printer': '🖨️', 'phone': '📱'
+                };
+
+                this.ctx.font = '28px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(icons[device.type] || '📦', device.x, device.y);
+
+                this.ctx.font = 'bold 13px Inter';
+                this.ctx.fillStyle = '#e2e8f0';
+                this.ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                this.ctx.shadowBlur = 4;
+                this.ctx.fillText(device.name, device.x, device.y + 60);
+
+                this.ctx.font = '11px Inter';
+                this.ctx.fillStyle = '#94a3b8';
+                this.ctx.fillText(device.ip, device.x, device.y + 77);
+
+                this.ctx.shadowColor = 'transparent';
+                this.ctx.shadowBlur = 0;
+
+                if (device.status === 'online') {
+                    this.ctx.beginPath();
+                    this.ctx.arc(device.x + 25, device.y - 25, 6, 0, Math.PI * 2);
+                    this.ctx.fillStyle = '#4ade80';
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = '#fff';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                    
+                    this.ctx.shadowColor = '#4ade80';
+                    this.ctx.shadowBlur = 10;
+                    this.ctx.fill();
+                    this.ctx.shadowColor = 'transparent';
+                } else {
+                    this.ctx.beginPath();
+                    this.ctx.arc(device.x + 25, device.y - 25, 6, 0, Math.PI * 2);
+                    this.ctx.fillStyle = '#f87171';
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = '#fff';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                }
+            }
+        }
+
+        const simulator = new NetworkSimulator();
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                simulator.log('🌐 Simulador de Red Pro inicializado', 'success');
+                simulator.log('💡 Tip: Arrastra dispositivos desde la paleta al canvas para agregar en posición específica', 'info');
+                simulator.log('💡 O haz click para agregar en el centro y luego arrastra para posicionar', 'info');
+                createCenteredTopology();
+            }, 300);
+        });
+
+        function createCenteredTopology() {
+            const centerX = simulator.canvas.width / 2;
+            const centerY = simulator.canvas.height / 2;
+            const radius = 200;
+
+            // Internet/Cloud
+            const cloud = {
+                id: Date.now() + 1,
+                type: 'cloud',
+                x: centerX,
+                y: centerY - radius - 80,
+                name: 'INTERNET',
+                ip: '8.8.8.8',
+                subnet: '0.0.0.0',
+                gateway: '',
+                status: 'online',
+                config: {}
+            };
+            simulator.devices.push(cloud);
+
+            // Firewall
+            const firewall = {
+                id: Date.now() + 2,
+                type: 'firewall',
+                x: centerX,
+                y: centerY - radius,
+                name: 'FIREWALL-PRINCIPAL',
+                ip: '192.168.1.254',
+                subnet: '255.255.255.0',
+                gateway: '192.168.1.1',
+                status: 'online',
+                config: {}
+            };
+            simulator.devices.push(firewall);
+
+            // Router Central
+            const router = {
+                id: Date.now() + 3,
+                type: 'router',
+                x: centerX,
+                y: centerY,
+                name: 'ROUTER-CENTRAL',
+                ip: '192.168.1.1',
+                subnet: '255.255.255.0',
+                gateway: '192.168.1.1',
+                status: 'online',
+                config: {}
+            };
+            simulator.devices.push(router);
+
+            // Switch Izquierdo
+            const switch1 = {
+                id: Date.now() + 4,
+                type: 'switch',
+                x: centerX - radius,
+                y: centerY,
+                name: 'SWITCH-PISO-1',
+                ip: '192.168.1.2',
+                subnet: '255.255.255.0',
+                gateway: '192.168.1.1',
+                status: 'online',
+                config: {}
+            };
+            simulator.devices.push(switch1);
+
+            // Switch Derecho
+            const switch2 = {
+                id: Date.now() + 5,
+                type: 'switch',
+                x: centerX + radius,
+                y: centerY,
+                name: 'SWITCH-PISO-2',
+                ip: '192.168.1.3',
+                subnet: '255.255.255.0',
+                gateway: '192.168.1.1',
+                status: 'online',
+                config: {}
+            };
+            simulator.devices.push(switch2);
+
+            // PCs conectados al Switch 1
+            const pc1 = {
+                id: Date.now() + 6,
+                type: 'pc',
+                x: centerX - radius - 120,
+                y: centerY - 100,
+                name: 'PC-ADMIN',
+                ip: '192.168.1.10',
+                subnet: '255.255.255.0',
+                gateway: '192.168.1.1',
+                status: 'online',
+                config: {}
+            };
+            simulator.devices.push(pc1);
+
+            const pc2 = {
+                id: Date.now() + 7,
+                type: 'pc',
+                x: centerX - radius - 120,
+                y: centerY + 100,
+                name: 'PC-CONTABILIDAD',
+                ip: '192.168.1.11',
+                subnet: '255.255.255.0',
+                gateway: '192.168.1.1',
+                status: 'online',
+                config: {}
+            };
+            simulator.devices.push(pc2);
+
+            // Laptop conectada al Switch 1
+            const laptop1 = {
+                id: Date.now() + 8,
+                type: 'laptop',
+                x: centerX - radius,
+                y: centerY + radius - 50,
+                name: 'LAPTOP-GERENCIA',
+                ip: '192.168.1.12',
+                subnet: '255.255.255.0',
+                gateway: '192.168.1.1',
+                status: 'online',
+                config: {}
+            };
+            simulator.devices.push(laptop1);
+
+            // Server conectado al Switch 2
+            const server1 = {
+                id: Date.now() + 9,
+                type: 'server',
+                x: centerX + radius + 120,
+                y: centerY - 100,
+                name: 'SERVER-DB',
+                ip: '192.168.1.100',
+                subnet: '255.255.255.0',
+                gateway: '192.168.1.1',
+                status: 'online',
+                config: {}
+            };
+            simulator.devices.push(server1);
+
+            // Server Web
+            const server2 = {
+                id: Date.now() + 10,
+                type: 'server',
+                x: centerX + radius + 120,
+                y: centerY + 100,
+                name: 'SERVER-WEB',
+                ip: '192.168.1.101',
+                subnet: '255.255.255.0',
+                gateway: '192.168.1.1',
+                status: 'online',
+                config: {}
+            };
+            simulator.devices.push(server2);
+
+            // Access Point
+            const ap1 = {
+                id: Date.now() + 11,
+                type: 'access-point',
+                x: centerX + radius,
+                y: centerY + radius - 50,
+                name: 'AP-OFICINAS',
+                ip: '192.168.1.50',
+                subnet: '255.255.255.0',
+                gateway: '192.168.1.1',
+                status: 'online',
+                config: {}
+            };
+            simulator.devices.push(ap1);
+
+            // PC conectada al Access Point
+            const laptop2 = {
+                id: Date.now() + 12,
+                type: 'laptop',
+                x: centerX + radius + 50,
+                y: centerY + radius + 50,
+                name: 'LAPTOP-VENTAS',
+                ip: '192.168.1.51',
+                subnet: '255.255.255.0',
+                gateway: '192.168.1.1',
+                status: 'online',
+                config: {}
+            };
+            simulator.devices.push(laptop2);
+
+            // Impresora conectada al Switch 1
+            const printer = {
+                id: Date.now() + 13,
+                type: 'printer',
+                x: centerX - radius + 120,
+                y: centerY - 100,
+                name: 'IMPRESORA-OFICINA',
+                ip: '192.168.1.20',
+                subnet: '255.255.255.0',
+                gateway: '192.168.1.1',
+                status: 'online',
+                config: {}
+            };
+            simulator.devices.push(printer);
+
+            // Crear todas las conexiones
+            // Internet → Firewall
+            simulator.connections.push({
+                id: Date.now() + 100,
+                from: cloud,
+                to: firewall,
+                status: 'active',
+                bandwidth: '1 Gbps',
+                latency: 15
+            });
+
+            // Firewall → Router
+            simulator.connections.push({
+                id: Date.now() + 101,
+                from: firewall,
+                to: router,
+                status: 'active',
+                bandwidth: '1 Gbps',
+                latency: 5
+            });
+
+            // Router → Switch 1
+            simulator.connections.push({
+                id: Date.now() + 102,
+                from: router,
+                to: switch1,
+                status: 'active',
+                bandwidth: '1 Gbps',
+                latency: 3
+            });
+
+            // Router → Switch 2
+            simulator.connections.push({
+                id: Date.now() + 103,
+                from: router,
+                to: switch2,
+                status: 'active',
+                bandwidth: '1 Gbps',
+                latency: 3
+            });
+
+            // Switch 1 → PCs y Laptop
+            simulator.connections.push({
+                id: Date.now() + 104,
+                from: switch1,
+                to: pc1,
+                status: 'active',
+                bandwidth: '100 Mbps',
+                latency: 8
+            });
+
+            simulator.connections.push({
+                id: Date.now() + 105,
+                from: switch1,
+                to: pc2,
+                status: 'active',
+                bandwidth: '100 Mbps',
+                latency: 8
+            });
+
+            simulator.connections.push({
+                id: Date.now() + 106,
+                from: switch1,
+                to: laptop1,
+                status: 'active',
+                bandwidth: '100 Mbps',
+                latency: 10
+            });
+
+            // Switch 1 → Impresora
+            simulator.connections.push({
+                id: Date.now() + 111,
+                from: switch1,
+                to: printer,
+                status: 'active',
+                bandwidth: '100 Mbps',
+                latency: 5
+            });
+
+            // Switch 2 → Servers y Access Point
+            simulator.connections.push({
+                id: Date.now() + 107,
+                from: switch2,
+                to: server1,
+                status: 'active',
+                bandwidth: '1 Gbps',
+                latency: 2
+            });
+
+            simulator.connections.push({
+                id: Date.now() + 108,
+                from: switch2,
+                to: server2,
+                status: 'active',
+                bandwidth: '1 Gbps',
+                latency: 2
+            });
+
+            simulator.connections.push({
+                id: Date.now() + 109,
+                from: switch2,
+                to: ap1,
+                status: 'active',
+                bandwidth: '1 Gbps',
+                latency: 5
+            });
+
+            // Access Point → Laptop Inalámbrica
+            simulator.connections.push({
+                id: Date.now() + 110,
+                from: ap1,
+                to: laptop2,
+                status: 'active',
+                bandwidth: '300 Mbps',
+                latency: 12
+            });
+
+            simulator.updateStats();
+            simulator.updateDeviceList();
+            simulator.render();
+            
+            simulator.log('✅ Topología empresarial creada exitosamente', 'success');
+            simulator.log('📊 Red con 13 dispositivos y 12 conexiones', 'info');
+            simulator.log('🔗 Todos los dispositivos están interconectados', 'success');
+            simulator.log('💡 Presiona "Iniciar Simulación" para ver el flujo de datos', 'info');
+            simulator.log('🆕 Nuevas características: Arrastrar desde paleta, Generar PDF, Exportar/Importar topología', 'info');
+        }
+    </script>
+</body>
+</html>
